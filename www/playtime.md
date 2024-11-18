@@ -55,7 +55,7 @@ See how different values for _Alpha_ affect higher and lower values in the corre
  <figure>
     <img src="meanr2alpha_label.png"
          alt="mean r to alpha relationship">
-    <figcaption>Mean correlation must be much larger when the scale has fewer items.</figcaption>
+    <figcaption>Mean correlation must must increase when the scale has fewer items.</figcaption>
 </figure>
 
 ---- 

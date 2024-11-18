@@ -42,7 +42,7 @@ ui <- page_navbar(
         title = "How to use LikertMakeR online",
         div(img(
           src = "LikertMakeR_4.png",
-          width = "70%", align = "center"
+          width = "60%", align = "center"
         ))
       ),
       # card(
@@ -196,13 +196,13 @@ ui <- page_navbar(
         card( # means and standard deviations
           class = "border-0",
           min_height = 100,
-          # card_header(
-          #   "Summary Moments",
-          #   tooltip(
-          #     bs_icon("info-circle"),
-          #     "Means and Standard Deviations of created variables."
-          #   )
-          # ),
+          card_header(
+            "Summary Moments" #,
+            # tooltip(
+            #   bs_icon("info-circle"),
+            #   "Means and Standard Deviations of created variables."
+            # )
+          ),
           card_body(
             verbatimTextOutput("dataSummary")
           )
