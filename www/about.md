@@ -1,5 +1,5 @@
 <!---  
-<img src="LikertMakeR_2.png" alt="LikertMakeR" width="200" height = "200" />
+<img src="LikertMakeR_4.png" alt="LikertMakeR" width="200" height = "200" />
 --->
 
 ### LikertMakeR online
@@ -9,10 +9,14 @@
 
 **Author**: _Hume Winzar_
 
-**Date**: _May 2024_
+**Date**: _June 2025_
 
-Details are available on my GitHub site: 
-[github.com/WinzarH/LikertMakeR](https://github.com/WinzarH/LikertMakeR/blob/main/README.md).
+Details are available on the package GitHub site: 
+<a href="https://winzarh.github.io/LikertMakeR/index.html" target="_blank">winzarh.github.io/LikertMakeR</a>
+
+<!---  
+[winzarh.github.io/LikertMakeR](https://winzarh.github.io/LikertMakeR/index.html).
+--->
 
 #### Motivation
 
