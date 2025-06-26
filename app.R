@@ -9,13 +9,15 @@ library(ragg) # to save output chart
 library(markdown) # display text files
 library(DT) # data table rendering
 library(skimr) # spark histograms
-library(psych) # pairs panels visualisation
+# library(psych) # pairs panels visualisation
+library(GGally) # pairs plots
+library(ggplot2)
 
 library(LikertMakeR)
 
 link_github <- tags$a(shiny::icon("github"),
   "LikertMakeR development version",
-  href = "https://github.com/WinzarH/LikertMakeR",
+  href = "https://winzarh.github.io/LikertMakeR/",
   target = "_blank"
 )
 link_cran <- tags$a(shiny::icon("r-project"),
@@ -25,7 +27,7 @@ link_cran <- tags$a(shiny::icon("r-project"),
 )
 
 ui <- page_navbar(
-  theme = bs_theme(version = 5, preset = "lumen"),
+  theme = bs_theme(version = 5, preset = "litera"),
   ## theme options:
   ## litera
   ## journal
@@ -197,7 +199,7 @@ ui <- page_navbar(
           class = "border-0",
           min_height = 100,
           card_header(
-            "Summary Moments" #,
+            "Summary Moments" # ,
             # tooltip(
             #   bs_icon("info-circle"),
             #   "Means and Standard Deviations of created variables."
@@ -207,12 +209,16 @@ ui <- page_navbar(
             verbatimTextOutput("dataSummary")
           )
         ),
-        value_box(
-          ## expression(paste("Phase Angle ", phi))
-          title = "Cronbach's alpha of new data",
-          value = textOutput("cronbachAlphaOutput") # ,
-          # showcase = bs_icon("crosshair")
-        ), # end value box
+        card( # Cronbach alpha
+          min_height = 100,
+          class = "border-0",
+          card_header(
+            "Cronbach's Alpha"
+          ),
+          card_body(
+            verbatimTextOutput("cronbachAlphaOutput")
+          )
+        ),
         card( # eigenvalues
           min_height = 100,
           class = "border-0",
@@ -325,7 +331,7 @@ server <- function(input, output, session) {
   # Calculate and display Cronbach's Alpha
   output$cronbachAlpha <- renderText({
     if (is.matrix(resultMatrix())) {
-      c_alpha <- alpha(resultMatrix()) |> round(4)
+      c_alpha <- LikertMakeR::alpha(resultMatrix()) |> round(4)
       return(c_alpha)
     }
   })
@@ -362,6 +368,9 @@ server <- function(input, output, session) {
     do.call(tagList, inputFields)
   })
 
+  # bounds for pairs plot
+  bounds <- reactiveValues(lower = NULL, upper = NULL)
+
   # Synthetic data generation logic with dynamic inputs
   syntheticData <- eventReactive(input$generate, {
     req(resultMatrix()) # Check 'resultMatrix' has been calculated
@@ -378,10 +387,15 @@ server <- function(input, output, session) {
     lowerbounds <- sapply(1:numItems, function(i) input[[paste0("lower", i)]])
     upperbounds <- sapply(1:numItems, function(i) input[[paste0("upper", i)]])
 
+    bounds$lower <- lowerbounds
+    bounds$upper <- upperbounds
+
+
     # Validation passed, proceed to generate data
     tryCatch(
       {
         data <- makeItems(n, means, sds, lowerbounds, upperbounds, matrix)
+        colnames(data) <- paste0("v_", seq_len(ncol(data)))
         return(data)
       },
       error = function(e) {
@@ -415,18 +429,84 @@ server <- function(input, output, session) {
   })
 
 
+  # generatePairsPlot <- function(data) {
+  #   pairs.panels(data,
+  #     lm = TRUE,
+  #     col = "firebrick", # or use "#8A0707" for a darker blood red
+  #     lwd = 7,
+  #     # line.col = "red",
+  #     cex.cor = 0.5,
+  #     jiggle = TRUE,
+  #     ellipses = FALSE,
+  #     density = TRUE,
+  #     smoother = TRUE
+  #   )
+  # }
 
-  generatePairsPlot <- function(data) {
-    pairs.panels(data,
-      lm = TRUE,
-      cex.cor = 0.85,
-      ellipses = FALSE,
-      density = FALSE,
-      smoother = TRUE
-    )
+  custom_smooth <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+      geom_point(
+        alpha = 0.6,
+        color = "steelblue",
+        position = position_jitter(width = 0.2, height = 0.2),
+        size = 1.5
+      ) +
+      geom_smooth(
+        method = "lm",
+        se = FALSE,
+        color = "firebrick",
+        size = 1.2
+      )
+  }
+
+  cor_only <- function(data, mapping, method = "pearson", digits = 2, ...) {
+    x <- eval_data_col(data, mapping$x)
+    y <- eval_data_col(data, mapping$y)
+    corr <- cor(x, y, method = method, use = "pairwise.complete.obs")
+    label <- formatC(corr, format = "f", digits = digits)
+
+    ggally_text(
+      label = label,
+      mapping = aes(),
+      xP = 0.5, yP = 0.5,
+      size = 6, ...
+    ) +
+      theme_void()
+  }
+
+  custom_bar_diag <- function(data, mapping, ...) {
+    varname <- as_label(mapping$x)
+    idx <- as.integer(gsub("v_", "", varname)) # assumes colnames are v_1, v_2, etc.
+
+    bin_count <- bounds$upper[idx] - bounds$lower[idx] + 1
+
+    ggplot(data, mapping) +
+      geom_histogram(
+        bins = bin_count,
+        fill = "steelblue",
+        color = "white"
+      )
   }
 
 
+  generatePairsPlot <- function(data) {
+    ggpairs(
+      data,
+      lower = list(continuous = custom_smooth),
+      diag = list(continuous = custom_bar_diag),
+      upper = list(continuous = wrap(cor_only, digits = 2))
+    ) +
+      theme_minimal(base_size = 14) + # changes default sizes
+      theme(
+        axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.line = element_line(color = "black"),
+        plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank()
+      )
+  }
 
   # Calculate and display means and standard deviations
   output$dataSummary <- renderPrint({
@@ -445,7 +525,7 @@ server <- function(input, output, session) {
   output$cronbachAlphaOutput <- renderText({
     req(syntheticData()) # Make sure syntheticData is available
     data <- syntheticData()
-    cr_alpha <- alpha(NULL, data) |> round(4)
+    cr_alpha <- LikertMakeR::alpha(NULL, data) |> round(4)
     return(cr_alpha)
   })
 
@@ -462,11 +542,11 @@ server <- function(input, output, session) {
     content = function(file) {
       req(plotData()) # Ensure the plot is ready
       ragg::agg_png(file,
-        width = input$items * 100,
-        height = input$items * 100,
+        width = input$items * 200,
+        height = input$items * 200,
         res = 144
       )
-      generatePairsPlot(plotData()) # Re-generate the plot for saving
+      print(generatePairsPlot(plotData()))
       dev.off()
     }
   )
