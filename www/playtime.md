@@ -17,11 +17,11 @@ The _variance_ parameter adjusts the variation around the mean while giving the 
  
  - Setting _variance_ around '2.0', or above, risks creating a matrix that is non-positive-definite, and so not feasible. 
  
-#### Experiment with different _Alpha_ values
+#### Experiment with different values for _alpha_ 
 
+Keep the same number of items and change the value for _alpha_.
 
-
-_Cronbac's Alpha_ is a function of:
+_Cronbach's Alpha_ is a function of:
 
  - _k_, the number of items used to make the summated (or average) scale
  
@@ -38,13 +38,20 @@ $$
 $$
 --->
 <br>
-<br>
 
-See how different values for _Alpha_ affect higher and lower values in the correlation matrix.
+See how different values for _alpha_ affect the resulting correlation matrix.
 
- - See also how different numbers of items in the scale (columns and rows in the matrix) affect higher and lower values in the matrix at diffrent _Alpha_ values.
+#### Experiment with different numbers of items 
 
- - Note that fewer items require higher correlations to achieve the required _Cronbach's Alpha_. 
+Keep the same value for _alpha_ and change the number of items.
+
+Different numbers of items in the scale affect values in the correlation matrix at the same _alpha_ values.
+
+ - Note that fewer items require higher correlations to achieve a desired _Cronbach's Alpha_. 
+ 
+     * that is, if item correlations are low, then you can increase _alpha_ by 
+     increasing the number of items.
+     * Is that a good thing?
  
 <!---
  ![mean r to alpha relationship](meanr2alpha_label.png)

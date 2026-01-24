@@ -9,12 +9,3 @@
   -  Teaching: creating synthetic data with known properties for 
   classroom exercises
   
-  - Learning: 
-    
-     -  Helping researchers and students to better understand the 
-     relationships among scale properties, sample size, 
-     number of items, _etc._ ...
-
-     - checking the feasibility of scale moments with given scale and 
-     correlation properties
-
