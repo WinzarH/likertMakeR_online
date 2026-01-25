@@ -6,35 +6,42 @@
 # See https://github.com/r-lib/actions/tree/master/examples#readme for
 # additional example workflows available for the R community.
 
-name: R
+name: R (Shiny app)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        r-version: ['3.6.3', '4.1.1']
+        r-version: ["release"]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up R ${{ matrix.r-version }}
-        uses: r-lib/actions/setup-r@f57f1301a053485946083d7a45022b278929a78a
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.r-version }}
-      - name: Install dependencies
+
+      # If you use a renv.lock, this will restore deps and cache them
+      - name: Restore dependencies (renv)
+        uses: r-lib/actions/setup-renv@v2
+        with:
+          cache-version: 2
+
+      # Smoke test: ensure the app file(s) parse and key packages load
+      - name: Smoke test
         run: |
-          install.packages(c("remotes", "rcmdcheck"))
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
-      - name: Check
-        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
-        shell: Rscript {0}
+          Rscript -e "sessionInfo()"
+          Rscript -e "library(shiny)"
+          Rscript -e "source('app.R'); cat('app.R sourced OK\n')"
