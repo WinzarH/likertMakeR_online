@@ -1,5 +1,6 @@
-
-### Things to try
+---
+title: "Things to try""
+---
 
 #### Experiment with 'Variance' in the correlation matrix
 
@@ -15,7 +16,11 @@ The _variance_ parameter adjusts the variation around the mean while giving the 
  
  - Setting _variance_ at '1.0' produces a matrix with a wide variation around the desired mean - typically with eigenvalues that would suggest a multidimensional scale. 
  
- - Setting _variance_ around '2.0', or above, risks creating a matrix that is non-positive-definite, and so not feasible. 
+ - Setting _variance_ at higher values, risks creating a matrix that is non-positive-definite, and so not feasible. 
+ 
+ 
+ 
+ 
  
 #### Experiment with different values for _alpha_ 
 
@@ -41,6 +46,9 @@ $$
 
 See how different values for _alpha_ affect the resulting correlation matrix.
 
+
+
+
 #### Experiment with different numbers of items 
 
 Keep the same value for _alpha_ and change the number of items.
@@ -57,12 +65,14 @@ Different numbers of items in the scale affect values in the correlation matrix 
  ![mean r to alpha relationship](meanr2alpha_label.png)
  --->
  
+ 
+ 
 ##### Relationship between _&alpha;_ and _r&#x305;_ at different number of items, _k_.
  
  <figure>
     <img src="meanr2alpha_label.png"
          alt="mean r to alpha relationship">
-    <figcaption>Mean correlation must must increase when the scale has fewer items.</figcaption>
+    <figcaption>To achieve the same _alpha_, mean correlation must increase when the scale has fewer items.</figcaption>
 </figure>
 
 ---- 

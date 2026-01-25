@@ -41,20 +41,34 @@ A **template** like this is downloadable.
     "Scale03", 3, 1, 1, 5, 1
     "Scale04", 3, 1, 1, 5, 1
 
-alternative template
+
+###### Example
+
+Six constructs each measured with four 1-7 rating-scale items.
 
 ```
-"scale","mean","sd","lower","upper","nItems"
-"Scale01", 3, 1, 1, 5, 1
-"Scale02", 3, 1, 1, 5, 1
-"Scale03", 3, 1, 1, 5, 1
-"Scale04", 3, 1, 1, 5, 1
+scale,             mean,  sd,   lower, upper, nItems
+Extraversion,      4,     1.16, 1,     7,     4
+Agreeableness,     5.27,  0.98, 1,     7,     4
+Conscientiousness, 5.17,  1.05, 1,     7,     4
+Neuroticism,       3.39,  1.1,  1,     7,     4
+Openness,          4.76,  1.12, 1,     7,     4
+Humility,          5.15,  1.32, 1,     7,     4
+
 ```
 
+###### source:
+
+Milojev, P., D. Osborne, L.M. Greaves, F.K. Barlow, C.G. Sibley, (2013),
+"The Mini-IPIP6: Tiny yet highly stable markers of Big Six personality",
+_Journal of Research in Personality_, 47/6:936-944. 
+<https://doi.org/10.1016/j.jrp.2013.09.004>
 
 
 
-#### Citations
+
+
+#### Further reading
 
   - Milojev, P., D. Osborne, L.M. Greaves, F.K. Barlow, C.G. Sibley, (2013),
 "The Mini-IPIP6: Tiny yet highly stable markers of Big Six personality",
@@ -62,8 +76,13 @@ _Journal of Research in Personality_, 47/6:936-944.
 <https://doi.org/10.1016/j.jrp.2013.09.004>
 
   - Robinson M.A., (2018) 
-  "Using multi-item psychometric scales for research and practice in human resource management". 
-  _Human Resources Management_; 57:739–750. <https://doi.org/10.1002/hrm.21852> 
+  "Using multi-item psychometric scales for research and practice in human resource management", 
+  _Human Resources Management_; 57:739–750. 
+  <https://doi.org/10.1002/hrm.21852> 
   
+  - Sibley, C. G., Luyten, N., Purnomo, M., Mobberley, A., Wootton, L. W., Hammond, M. D., ... & Robertson, A. (2011). 
+  "The Mini-IPIP6: Validation and extension of a short measure of the Big-Six factors of personality in New Zealand", 
+  _New Zealand Journal of Psychology_; 40(3). 
+  <https://doi.org/10.1016/j.jrp.2013.09.004>
   
   

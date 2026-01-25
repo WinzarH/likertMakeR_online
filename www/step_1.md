@@ -23,14 +23,18 @@ Required parameters are:
      
      * '1' will make some correlations high and some quite low or negative; 
      
-     * '2', or more, risks generating an infeasible non-positive-definite matrix
+     * '1.5' risks generating an infeasible non-positive-definite matrix
+
 
 #### (2) Upload your own correlation matrix as a CSV file
 
 Recommended for generating several multi-item scales that are correlated in a predefined way.
 
-##### Examples:
+A **template** can be downloaded.
 
+
+
+##### Example:
 
 
 ```
@@ -43,4 +47,10 @@ Openness,0.264,-0.233,0.0021,-0.01,1,0.018
 Humility,0.106,0.156,0.072,-0.192,0.018,1
 ```
 
+###### matrix source:
+
+Milojev, P., D. Osborne, L.M. Greaves, F.K. Barlow, C.G. Sibley, (2013),
+"The Mini-IPIP6: Tiny yet highly stable markers of Big Six personality",
+_Journal of Research in Personality_, 47/6:936-944. 
+<https://doi.org/10.1016/j.jrp.2013.09.004>
   
