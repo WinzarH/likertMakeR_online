@@ -1,11 +1,3 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# See https://github.com/r-lib/actions/tree/master/examples#readme for
-# additional example workflows available for the R community.
-
 name: R (Shiny app)
 
 on:
@@ -20,9 +12,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        r-version: ["release"]
 
     steps:
       - uses: actions/checkout@v4
@@ -30,21 +19,24 @@ jobs:
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: ${{ matrix.r-version }}
+          r-version: "release"
+
+      - name: Set up Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
 
       - name: System dependencies (Ubuntu)
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends \
-              pkg-config \
-              libcurl4-openssl-dev \
-              libssl-dev \
-              libxml2-dev \
-              libfontconfig1-dev \
-              libfreetype6-dev \
-              libharfbuzz-dev \
-              libfribidi-dev
-
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libfontconfig1-dev \
+            libfreetype6-dev \
+            libharfbuzz-dev \
+            libfribidi-dev
+          sudo apt-get clean
 
       - name: Restore dependencies (renv)
         uses: r-lib/actions/setup-renv@v2
@@ -55,4 +47,3 @@ jobs:
         run: |
           Rscript -e "library(shiny)"
           Rscript -e "source('app.R'); cat('app.R sourced OK\n')"
-
