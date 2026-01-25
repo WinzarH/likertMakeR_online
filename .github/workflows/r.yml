@@ -33,9 +33,18 @@ jobs:
           r-version: ${{ matrix.r-version }}
 
       - name: System dependencies (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libssl-dev pkg-config libfontconfig1-dev libfreetype6-dev pandoc
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              pkg-config \
+              libcurl4-openssl-dev \
+              libssl-dev \
+              libxml2-dev \
+              libfontconfig1-dev \
+              libfreetype6-dev \
+              libharfbuzz-dev \
+              libfribidi-dev
+
 
       - name: Restore dependencies (renv)
         uses: r-lib/actions/setup-renv@v2
