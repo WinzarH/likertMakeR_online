@@ -24,23 +24,24 @@ jobs:
       - name: Set up Pandoc
         uses: r-lib/actions/setup-pandoc@v2
 
-            - name: System dependencies (Ubuntu)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          pkg-config \
-          libcurl4-openssl-dev \
-          libssl-dev \
-          libxml2-dev \
-          libfontconfig1-dev \
-          libfreetype6-dev \
-          libharfbuzz-dev \
-          libfribidi-dev \
-          libpng-dev \
-          libtiff5-dev \
-          libjpeg-dev \
-          libwebp-dev
-        sudo apt-get clean
+      - name: System dependencies (Ubuntu)
+      
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libfontconfig1-dev \
+            libfreetype6-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libpng-dev \
+            libtiff5-dev \
+            libjpeg-dev \
+            libwebp-dev
+          sudo apt-get clean
 
 
       - name: Restore dependencies (renv)
