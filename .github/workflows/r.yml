@@ -20,7 +20,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         r-version: ["release"]
@@ -33,15 +32,18 @@ jobs:
         with:
           r-version: ${{ matrix.r-version }}
 
-      # If you use a renv.lock, this will restore deps and cache them
+      - name: System dependencies (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev pkg-config
+
       - name: Restore dependencies (renv)
         uses: r-lib/actions/setup-renv@v2
         with:
           cache-version: 2
 
-      # Smoke test: ensure the app file(s) parse and key packages load
       - name: Smoke test
         run: |
-          Rscript -e "sessionInfo()"
           Rscript -e "library(shiny)"
           Rscript -e "source('app.R'); cat('app.R sourced OK\n')"
+
