@@ -1,15 +1,13 @@
-<!---  
-<img src="LikertMakeR_4.png" alt="LikertMakeR" width="200" height = "200" />
---->
+---
+title: "About LikertMakeR_online"
+---
 
-### LikertMakeR online
-
-**_LikertMakeR online_** is an online implementation of three functions from the 
-**_LikertMakeR_** package for the _**R** statistical programming language_.
+**_LikertMakeR online_** is an online implementation of three functions from 
+the **_LikertMakeR_** package for the _**R** statistical programming language_.
 
 **Author**: _Hume Winzar_
 
-**Date**: _January 2026_
+**Date**: _February 2026_
 
 Details are available on the package GitHub site: 
 <a href="https://winzarh.github.io/LikertMakeR/index.html" target="_blank">winzarh.github.io/LikertMakeR</a>

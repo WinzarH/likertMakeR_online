@@ -70,11 +70,19 @@ scale_grid_css <- "
 "
 
 
+# litera
+# "cerulean"  "cosmo"         
+# "journal"   "litera"    "materia"  
+# "minty"     "morph"     "pulse"     "quartz"    "sandstone"
+# "simplex"   "sketchy"   "slate"     "solar"     "spacelab" 
+# "superhero" "united"    "vapor"     "yeti"      "zephyr" 
+
+
 # ---- UI ----
 ui <- tagList(
   bslib::page_navbar(
     id = "main_nav",
-    theme = bs_theme(version = 5, preset = "litera") |>
+    theme = bs_theme(version = 5, preset = "sketchy") |>
       bs_add_rules("
 
 
@@ -345,8 +353,6 @@ ui <- tagList(
       conditionalPanel(
         condition = "input.main_nav == 'validate'",
         h5("Visualisation Controls"),
-        actionButton("plotData", "Update Plot", icon("image")),
-        br(),
         downloadButton("downloadPlot", "Download Plot")
       ),
 
@@ -365,22 +371,23 @@ ui <- tagList(
       title = "Instructions", value = "instructions",
       accordion(
         multiple = FALSE,
-        accordion_panel("Purpose", includeMarkdown("www/purpose.md")),
+        accordion_panel(
+          "Purpose", 
+          includeMarkdown("www/purpose.md")
+        ),
         accordion_panel(
           "How to use LikertMakeR online",
-          includeMarkdown("www/overview.md")
+          includeMarkdown("www/how_to.md")
         ),
         accordion_panel(
-          "#1: Establish a correlation matrix",
-          includeMarkdown("www/step_1.md")
+          "I have Cronbach's alpha and I want to generate items that 
+          create a multi-item scale",
+          includeMarkdown("www/likert_from_alpha.md")
         ),
         accordion_panel(
-          "#2: Specify parameters and generate data",
-          includeMarkdown("www/step_2.md")
-        ),
-        accordion_panel(
-          "#3: Validate Results",
-          includeMarkdown("www/step_3.md")
+          "I want to generate a dataframe of correlated scales, 
+          each representing separate constructs",
+          includeMarkdown("www/correlated_scales.md")
         )
       )
     ),
@@ -442,7 +449,6 @@ ui <- tagList(
               tooltip(bs_icon("info-circle"), "Correlations, histograms, and scatterplots")
             ),
             card_body(
-              uiOutput("plotSyncIndicator"),
               plotOutput("dataVis") |> 
                 withSpinner(type = 5)
             )
@@ -1772,11 +1778,8 @@ server <- function(input, output, session) {
   })
 
 
-  # ---- plot state ----
+  # ---- plot cache (data validation) ----
   plotStorage <- reactiveVal(NULL)
-
-  plot_is_stale <- reactiveVal(FALSE)
-  plot_has_rendered <- reactiveVal(FALSE)
 
 
   # Keep your dynamicInputs in sync with uploaded dimension
@@ -2159,56 +2162,18 @@ server <- function(input, output, session) {
     DT::datatable(syntheticData(), options = list(pageLength = 10))
   })
 
-  observeEvent(syntheticData(),
-    {
-      if (isTRUE(plot_has_rendered())) {
-        plot_is_stale(TRUE)
-      }
-    },
-    ignoreInit = TRUE
-  )
 
-
-  ## Visualise the data and correlations
-  # A reactive expression to store plot data only when 'Generate Plot' is clicked
-  plotData <- eventReactive(input$plotData, {
-    req(syntheticData()) # Ensure there are data to plot
-    syntheticData() # Holds the data to be used for plotting
-  })
-
-  observeEvent(plotData(),
-    {
-      plot_is_stale(FALSE)
-      plot_has_rendered(TRUE)
-    },
-    ignoreInit = TRUE
-  )
-
-
-  output$plotSyncIndicator <- renderUI({
+  # ---- Data validation: always reflect latest synthetic data ----
+  plot_df <- reactive({
     req(syntheticData())
-
-    if (isTRUE(plot_is_stale())) {
-      tags$div(
-        style = "position: absolute; top: 10px; right: 10px; z-index: 1000;",
-        tags$span(
-          class = "badge bg-warning text-dark",
-          bsicons::bs_icon("exclamation-triangle-fill"),
-          " Out of sync"
-        )
-      )
-    } else {
-      NULL
-    }
+    syntheticData()
   })
 
 
   # Calculate and display the eigenvalues of generated dataframe
   output$eigenSummary <- renderText({
-    req(plotData())
-    cor_dat <- plotData() |>
-      cor() |>
-      as.matrix()
+    req(plot_df())
+    cor_dat <- cor(plot_df(), use = "pairwise.complete.obs") |> as.matrix()
 
     eigen_vals <- eigen(cor_dat)$values |> round(2)
     paste(eigen_vals, collapse = ", ")
@@ -2292,10 +2257,9 @@ server <- function(input, output, session) {
   }
 
   # Calculate and display means and standard deviations
-  # Calculate and display means and standard deviations
   output$dataSummary <- renderPrint({
-    req(plotData())
-    x <- plotData()
+    req(plot_df())
+    x <- plot_df()
 
     myMoments <- rbind(
       mean = round(colMeans(x, na.rm = TRUE), 3),
@@ -2309,16 +2273,30 @@ server <- function(input, output, session) {
 
   # Calculate and display Cronbach's Alpha
   output$cronbachAlphaOutput <- renderText({
-    req(plotData())
-    sprintf("%.3f", LikertMakeR::alpha(NULL, plotData()))
+    req(plot_df())
+    sprintf("%.3f", LikertMakeR::alpha(NULL, plot_df()))
   })
 
-  # Render the plot in the UI when the 'Generate Plot' button is clicked
+  # Precompute the plot as soon as new data exist (so it's ready by the time
+  # the user clicks the Data validation tab).
+  observeEvent(syntheticData(), {
+    plotStorage(NULL)
+    withProgress(message = "Preparing validation plot...", value = 0, {
+      p <- generatePairsPlot(plot_df())
+      plotStorage(p)
+    })
+  }, ignoreInit = TRUE)
+
+
+  # Render cached plot (and fall back to on-demand if needed)
   output$dataVis <- renderPlot({
-    req(plotData())
-    p <- generatePairsPlot(plotData())
-    plotStorage(p) # store it for reuse
-    print(p)
+    req(syntheticData())
+
+    if (is.null(plotStorage())) {
+      p <- generatePairsPlot(plot_df())
+      plotStorage(p)
+    }
+    print(plotStorage())
   })
 
 

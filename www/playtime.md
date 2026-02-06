@@ -1,10 +1,21 @@
 ---
-title: "Things to try""
+title: "Things to try"
 ---
 
-#### Experiment with 'Variance' in the correlation matrix
+### Try this recipe 
 
-_Chronbach's Alpha_ is a function of the mean of the paired correlations of a set of variables. 
+In the **Correlation Matris** tab,
+  
+   - Set k = 3, alpha = .70, variance = 0
+
+   - Then k = 10 with same alpha
+
+Observe how mean r must change
+
+
+### Experiment with 'Variance' in the correlation matrix
+
+_Cronbach's Alpha_ is a function of the mean of the paired correlations of a set of variables. 
 
 The _variance_ parameter adjusts the variation around the mean while giving the desired _Alpha_ value. 
 
@@ -22,7 +33,7 @@ The _variance_ parameter adjusts the variation around the mean while giving the 
  
  
  
-#### Experiment with different values for _alpha_ 
+### Experiment with different values for _alpha_ 
 
 Keep the same number of items and change the value for _alpha_.
 
@@ -34,14 +45,16 @@ _Cronbach's Alpha_ is a function of:
  
 and is given by the formula:
 
+<p align="center" width="100%">
 <img title = "Cronbach's Alpha Formula" alt = "Alpha is a function of the average paired correlations and the number of items" src="alpha.svg">
-
+</p>
 
 <!---
 $$ 
 \alpha = {{k * \bar{r} } \over {1 + (k - 1) * \bar{r} }} 
 $$
 --->
+
 <br>
 
 See how different values for _alpha_ affect the resulting correlation matrix.
@@ -49,7 +62,7 @@ See how different values for _alpha_ affect the resulting correlation matrix.
 
 
 
-#### Experiment with different numbers of items 
+### Experiment with different numbers of items 
 
 Keep the same value for _alpha_ and change the number of items.
 
@@ -67,7 +80,7 @@ Different numbers of items in the scale affect values in the correlation matrix 
  
  
  
-##### Relationship between _&alpha;_ and _r&#x305;_ at different number of items, _k_.
+#### Relationship between _&alpha;_ and _r&#x305;_ at different number of items, _k_.
  
  <figure>
     <img src="meanr2alpha_label.png"
