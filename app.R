@@ -23,6 +23,8 @@ link_cran <- tags$a(shiny::icon("r-project"),
 )
 
 
+# ---- https://winzar.shinyapps.io/likertMakeR_online/  ----
+
 # ---- CSS injected last (after page_navbar) ----
 scale_grid_css <- "
 /* === scale grid: compact controls (loaded last) === */

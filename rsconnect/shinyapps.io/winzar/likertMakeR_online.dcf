@@ -1,0 +1,13 @@
+name: likertMakeR_online
+title: likertMakeR_online
+username: winzar
+account: winzar
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14995593
+bundleId: 11490823
+url: https://winzar.shinyapps.io/likertMakeR_online/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: extras
