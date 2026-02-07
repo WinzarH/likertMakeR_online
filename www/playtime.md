@@ -46,19 +46,23 @@ _Cronbach's Alpha_ is a function of:
 and is given by the formula:
 
 <p align="center" width="100%">
-<img title = "Cronbach's Alpha Formula" alt = "Alpha is a function of the average paired correlations and the number of items" src="alpha.svg">
+  <img 
+  title = "Cronbach's Alpha Formula" 
+  alt = "Alpha is a function of the average paired correlations and the number of items" 
+  src="alpha.svg">
 </p>
 
+</br>
+
+ 
 <!---
 $$ 
 \alpha = {{k * \bar{r} } \over {1 + (k - 1) * \bar{r} }} 
 $$
 --->
 
-<br>
 
 See how different values for _alpha_ affect the resulting correlation matrix.
-
 
 
 
