@@ -45,12 +45,13 @@ _Cronbach's Alpha_ is a function of:
  
 and is given by the formula:
 
-<p align="center" width="100%">
+<figure>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <img 
   title = "Cronbach's Alpha Formula" 
   alt = "Alpha is a function of the average paired correlations and the number of items" 
   src="alpha.svg">
-</p>
+</figure>
 
 </br>
 
