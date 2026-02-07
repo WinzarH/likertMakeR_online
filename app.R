@@ -70,12 +70,11 @@ scale_grid_css <- "
 "
 
 
-# litera
-# "cerulean"  "cosmo"         
-# "journal"   "litera"    "materia"  
-# "minty"     "morph"     "pulse"     "quartz"    "sandstone"
-# "simplex"   "sketchy"   "slate"     "solar"     "spacelab" 
-# "superhero" "united"    "vapor"     "yeti"      "zephyr" 
+# "cerulean"  "cosmo"
+# "journal"   "litera"    "materia"
+# "pulse"     "quartz"    "sandstone"
+# "simplex"   "sketchy"   "slate"     "solar" 
+# "vapor"     "yeti"      "zephyr"
 
 
 # ---- UI ----
@@ -84,7 +83,6 @@ ui <- tagList(
     id = "main_nav",
     theme = bs_theme(version = 5, preset = "cosmo") |>
       bs_add_rules("
-
 
     /* =========================
    Sidebar: compact form UI
@@ -137,9 +135,6 @@ ui <- tagList(
 }
 
 
-
-
-
 /* Any headings you place inside sidebar cards */
 .bslib-sidebar .card-body h5,
 .bslib-sidebar .card-body h6 {
@@ -147,14 +142,11 @@ ui <- tagList(
 }
 
 
-
-
   /* Reduce gutters in your dynamic fluidRows (Bootstrap 5 gutters) */
 .bslib-sidebar .row.g-1 {
   --bs-gutter-x: 0.15rem;
   --bs-gutter-y: 0.15rem;
 }
-
 
 
   /* Optional: tighten headings text spacing in sidebar */
@@ -306,7 +298,6 @@ ui <- tagList(
   margin-bottom: 0.20rem;
 }
 
-
   "),
     navbar_options = navbar_options(class = "bg-light", theme = "light"),
     title = "LikertMakeR online",
@@ -358,8 +349,8 @@ ui <- tagList(
 
       # --- About sidebar ---
       conditionalPanel(
-        condition = "input.main_nav == 'about'",
-        h5("About LikertMakeR online"),
+        condition = "input.main_nav == 'playtime'",
+        h5("Things to try"),
         img(src = "LikertMakeR_4.png", width = "45%", align = "center")
       )
     ),
@@ -372,7 +363,7 @@ ui <- tagList(
       accordion(
         multiple = FALSE,
         accordion_panel(
-          "Purpose", 
+          "Purpose",
           includeMarkdown("www/purpose.md")
         ),
         accordion_panel(
@@ -380,12 +371,12 @@ ui <- tagList(
           includeMarkdown("www/how_to.md")
         ),
         accordion_panel(
-          "I have Cronbach's alpha and I want to generate items that 
+          "I have Cronbach's alpha and I want to generate items that
           create a multi-item scale",
           includeMarkdown("www/likert_from_alpha.md")
         ),
         accordion_panel(
-          "I want to generate a dataframe of correlated scales, 
+          "I want to generate a dataframe of correlated scales,
           each representing separate constructs",
           includeMarkdown("www/correlated_scales.md")
         )
@@ -426,6 +417,15 @@ ui <- tagList(
         title = "generated data",
         DT::dataTableOutput("syntheticData") |>
           shinycssloaders::withSpinner(type = 5)
+      ),
+      bslib::accordion(
+        id = "dataGenDock",
+        multiple = FALSE,
+        bslib::accordion_panel(
+          "Imported parameters (interpreted)",
+          value = "params_preview",
+          uiOutput("scaleParamsPreviewUI")
+        )
       )
     ), # END nav_panel "Generate Synthetic Data"
 
@@ -449,7 +449,7 @@ ui <- tagList(
               tooltip(bs_icon("info-circle"), "Correlations, histograms, and scatterplots")
             ),
             card_body(
-              plotOutput("dataVis") |> 
+              plotOutput("dataVis") |>
                 withSpinner(type = 5)
             )
           )
@@ -496,7 +496,7 @@ ui <- tagList(
       title = "Things to Try", value = "playtime",
       accordion(
         multiple = FALSE,
-                accordion_panel(
+        accordion_panel(
           "Things to try",
           includeMarkdown("www/playtime.md")
         ),
@@ -735,6 +735,9 @@ server <- function(input, output, session) {
 
   coercion_warning <- reactiveVal(NULL)
   scale_params_csv <- reactiveVal(NULL) # store uploaded params as data.frame
+  scale_params_preview <- reactiveVal(NULL) # interpreted params preview for UI
+  scale_params_upload_id <- reactiveVal(0)  # increments on successful CSV upload
+  scale_params_generate_id <- reactiveVal(0) # increments when "Generate my data" pressed
 
   # Stores last successfully validated uploaded matrix
   M_upload_ok <- reactiveVal(NULL)
@@ -989,15 +992,36 @@ server <- function(input, output, session) {
       class = "lm-btn-auto"
     )
 
+    # status badge (next to upload controls)
+    st <- scale_params_status()
+    badge <- NULL
+    if (!is.null(st)) {
+      badge_class <- switch(st$type,
+        "ok"   = "badge text-bg-success",
+        "err"  = "badge text-bg-danger",
+        "info" = "badge text-bg-secondary"
+      )
+      badge_text <- switch(st$type,
+        "ok"   = "Imported OK",
+        "err"  = "Import error",
+        "info" = "Importing…"
+      )
+      badge <- tags$span(class = badge_class, badge_text)
+    }
+
     up_in <- tags$div(
       class = "lm-file-auto",
+      tags$div(
+        class = "d-flex align-items-center justify-content-between mb-1",
+        tags$label(`for` = "scaleParamsFile", "Upload scale parameters (.csv)", class = "form-label mb-0"),
+        badge
+      ),
       fileInput(
         "scaleParamsFile",
-        "Upload scale parameters (.csv)",
+        label = NULL,
         accept = c(".csv")
       )
     )
-
 
     if (has_m) {
       tagList(dl_btn, up_in)
@@ -1015,9 +1039,10 @@ server <- function(input, output, session) {
     }
   })
 
+
   output$scaleParamsStatus <- renderUI({
     st <- scale_params_status()
-    if (is.null(st)) {
+    if (is.null(st) || identical(st$type, "ok")) {
       return(NULL)
     }
 
@@ -1081,7 +1106,7 @@ server <- function(input, output, session) {
       radioButtons(
         "paramMode", "Enter parameters via:",
         choices = c("Manual entry" = "manual", "Upload CSV" = "csv"),
-        selected = "manual",
+        selected = (input$paramMode %||% "manual"),
         inline = TRUE
       ),
       uiOutput("paramModeUI"),
@@ -1106,6 +1131,7 @@ server <- function(input, output, session) {
       scale_params_applied(FALSE)
       # optional but good: clear any previous df so you can't accidentally generate using stale params
       scale_params_csv(NULL)
+      scale_params_preview(NULL)
 
       k <- ncol(M())
 
@@ -1164,6 +1190,23 @@ server <- function(input, output, session) {
       df2$nItems <- nItems_i
       scale_params_csv(df2)
 
+      # Build preview table with simple notes about coercion
+      notes <- vapply(seq_len(k), function(i) {
+        msg <- character(0)
+        if (!isTRUE(all.equal(df$lower[i], lower_i[i]))) msg <- c(msg, "lower floored")
+        if (!isTRUE(all.equal(df$upper[i], upper_i[i]))) msg <- c(msg, "upper floored")
+        if (!isTRUE(all.equal(df$nItems[i], nItems_i[i]))) msg <- c(msg, "nItems floored")
+        if (length(msg) == 0) "" else paste(msg, collapse = "; ")
+      }, character(1))
+      df_preview <- df2
+      df_preview$Notes <- notes
+      scale_params_preview(df_preview)
+
+      scale_params_upload_id(scale_params_upload_id() + 1L)
+
+      # Auto-open the preview accordion after a successful upload
+      bslib::accordion_panel_open("dataGenDock", "params_preview")
+
       # Apply to inputs (optional, but nice)
       for (i in seq_len(k)) {
         updateTextInput(session, paste0("scaleName", i),
@@ -1187,6 +1230,13 @@ server <- function(input, output, session) {
     },
     ignoreInit = TRUE
   )
+
+  # Track when user generates data so we can hide the preview only *after* generation
+  observeEvent(input$generate, {
+    scale_params_generate_id(scale_params_generate_id() + 1L)
+    # Hide preview after a successful generation click
+    bslib::accordion_panel_close("dataGenDock", "params_preview")
+  }, ignoreInit = TRUE)
 
   observeEvent(input$symFix,
     {
@@ -1485,6 +1535,7 @@ server <- function(input, output, session) {
   observeEvent(M(),
     {
       scale_params_csv(NULL)
+      scale_params_preview(NULL)
       scale_params_applied(FALSE)
       scale_params_status(NULL)
     },
@@ -2154,6 +2205,26 @@ server <- function(input, output, session) {
   })
 
 
+  output$scaleParamsPreviewUI <- renderUI({
+    # Show preview when:
+    # - user is in CSV mode
+    # - we have a parsed preview
+    # - the most recent *successful upload* is newer than the most recent *generate* click
+    req(input$paramMode)
+    if (!identical(input$paramMode, "csv")) return(NULL)
+    if (is.null(scale_params_preview())) return(NULL)
+
+    if (scale_params_upload_id() <= scale_params_generate_id()) return(NULL)
+
+    DT::DTOutput("scaleParamsPreview")
+  })
+
+  output$scaleParamsPreview <- DT::renderDT({
+    req(scale_params_preview())
+    DT::datatable(scale_params_preview(), options = list(pageLength = 10, dom = "tip"), rownames = FALSE)
+  })
+
+
   output$syntheticData <- renderDT({
     if (!is.null(data_error())) {
       return(DT::datatable(data.frame(Error = data_error())))
@@ -2279,13 +2350,16 @@ server <- function(input, output, session) {
 
   # Precompute the plot as soon as new data exist (so it's ready by the time
   # the user clicks the Data validation tab).
-  observeEvent(syntheticData(), {
-    plotStorage(NULL)
-    withProgress(message = "Preparing validation plot...", value = 0, {
-      p <- generatePairsPlot(plot_df())
-      plotStorage(p)
-    })
-  }, ignoreInit = TRUE)
+  observeEvent(syntheticData(),
+    {
+      plotStorage(NULL)
+      withProgress(message = "Preparing validation plot...", value = 0, {
+        p <- generatePairsPlot(plot_df())
+        plotStorage(p)
+      })
+    },
+    ignoreInit = TRUE
+  )
 
 
   # Render cached plot (and fall back to on-demand if needed)
