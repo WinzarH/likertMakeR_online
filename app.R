@@ -82,7 +82,7 @@ scale_grid_css <- "
 ui <- tagList(
   bslib::page_navbar(
     id = "main_nav",
-    theme = bs_theme(version = 5, preset = "sketchy") |>
+    theme = bs_theme(version = 5, preset = "cosmo") |>
       bs_add_rules("
 
 
@@ -493,16 +493,16 @@ ui <- tagList(
     ### About
     ####
     nav_panel(
-      title = "About LikertMakeR", value = "about",
+      title = "Things to Try", value = "playtime",
       accordion(
         multiple = FALSE,
-        accordion_panel(
-          "About LikertMakeR Online",
-          includeMarkdown("www/about.md")
-        ),
-        accordion_panel(
+                accordion_panel(
           "Things to try",
           includeMarkdown("www/playtime.md")
+        ),
+        accordion_panel(
+          "About LikertMakeR_online",
+          includeMarkdown("www/about.md")
         ),
         accordion_panel(
           "How to cite LikertMakeR",
