@@ -1,6 +1,4 @@
-## LikertMakeR_online
-
-<img alt = "LikertMakeR logo" src="www/LikertMakeR_4.png">
+## LikertMakeR_online <img alt = "LikertMakeR logo" src="www/LikertMakeR_4.png" width = 10%>
 
 A Shiny web app for generating **synthetic Likert-style survey data** from user-specified summary inputs.
 
