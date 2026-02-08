@@ -67,13 +67,33 @@ scale_grid_css <- "
   font-size: 0.88rem !important;
   box-sizing: border-box !important;
 }
+
+/* === validation layout: push bottom dock to screen bottom === */
+.lm-main-stack{
+  display:flex;
+  flex-direction:column;
+  min-height: calc(100vh - 9rem); /* navbar + padding allowance */
+}
+.lm-main-top{
+  flex: 1 1 auto;
+  min-height: 0; /* allow children to shrink */
+}
+.lm-bottom-dock{
+  margin-top: auto;
+}
+.lm-main-top .card,
+.lm-main-top .card-body{
+  height: 100%;
+}
+
+
 "
 
 
 # "cerulean"  "cosmo"
 # "journal"   "litera"    "materia"
 # "pulse"     "quartz"    "sandstone"
-# "simplex"   "sketchy"   "slate"     "solar" 
+# "simplex"   "sketchy"   "slate"     "solar"
 # "vapor"     "yeti"      "zephyr"
 
 
@@ -274,7 +294,8 @@ ui <- tagList(
 /* Scrollable verification block so it never wrecks the strip */
 .stats-strip .stats-scroll {
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  max-height: 8rem;
   white-space: nowrap;
   padding-bottom: 0.1rem;
 }
@@ -417,15 +438,6 @@ ui <- tagList(
         title = "generated data",
         DT::dataTableOutput("syntheticData") |>
           shinycssloaders::withSpinner(type = 5)
-      ),
-      bslib::accordion(
-        id = "dataGenDock",
-        multiple = FALSE,
-        bslib::accordion_panel(
-          "Imported parameters (interpreted)",
-          value = "params_preview",
-          uiOutput("scaleParamsPreviewUI")
-        )
       )
     ), # END nav_panel "Generate Synthetic Data"
 
@@ -446,11 +458,19 @@ ui <- tagList(
             class = "border-0",
             card_header(
               "Visual Summary",
-              tooltip(bs_icon("info-circle"), "Correlations, histograms, and scatterplots")
+              tooltip(bs_icon("info-circle"), 
+                      "How to read: 
+                      \nUpper panels - correlations; 
+                      \ndiagonal panels - distributions; 
+                      \nlower panels - scatterplots & fitted lines"
+                      )
             ),
             card_body(
-              plotOutput("dataVis") |>
-                withSpinner(type = 5)
+              style = "display:flex; flex-direction:column; height:100%;",
+              div(
+                plotOutput("dataVis", height = "calc(100vh - 22rem)") |>
+                  withSpinner(type = 5)
+              ) 
             )
           )
         ),
@@ -463,7 +483,7 @@ ui <- tagList(
             multiple = FALSE,
             bslib::accordion_panel(
               "Summary moments",
-              div(class = "stats-scroll", verbatimTextOutput("dataSummary"))
+              div(class = "stats-scroll", tableOutput("dataSummary"))
             ),
             bslib::accordion_panel(
               "Reliability (Cronbach’s alpha)",
@@ -735,9 +755,6 @@ server <- function(input, output, session) {
 
   coercion_warning <- reactiveVal(NULL)
   scale_params_csv <- reactiveVal(NULL) # store uploaded params as data.frame
-  scale_params_preview <- reactiveVal(NULL) # interpreted params preview for UI
-  scale_params_upload_id <- reactiveVal(0)  # increments on successful CSV upload
-  scale_params_generate_id <- reactiveVal(0) # increments when "Generate my data" pressed
 
   # Stores last successfully validated uploaded matrix
   M_upload_ok <- reactiveVal(NULL)
@@ -992,36 +1009,15 @@ server <- function(input, output, session) {
       class = "lm-btn-auto"
     )
 
-    # status badge (next to upload controls)
-    st <- scale_params_status()
-    badge <- NULL
-    if (!is.null(st)) {
-      badge_class <- switch(st$type,
-        "ok"   = "badge text-bg-success",
-        "err"  = "badge text-bg-danger",
-        "info" = "badge text-bg-secondary"
-      )
-      badge_text <- switch(st$type,
-        "ok"   = "Imported OK",
-        "err"  = "Import error",
-        "info" = "Importing…"
-      )
-      badge <- tags$span(class = badge_class, badge_text)
-    }
-
     up_in <- tags$div(
       class = "lm-file-auto",
-      tags$div(
-        class = "d-flex align-items-center justify-content-between mb-1",
-        tags$label(`for` = "scaleParamsFile", "Upload scale parameters (.csv)", class = "form-label mb-0"),
-        badge
-      ),
       fileInput(
         "scaleParamsFile",
-        label = NULL,
+        "Upload scale parameters (.csv)",
         accept = c(".csv")
       )
     )
+
 
     if (has_m) {
       tagList(dl_btn, up_in)
@@ -1039,10 +1035,9 @@ server <- function(input, output, session) {
     }
   })
 
-
   output$scaleParamsStatus <- renderUI({
     st <- scale_params_status()
-    if (is.null(st) || identical(st$type, "ok")) {
+    if (is.null(st)) {
       return(NULL)
     }
 
@@ -1106,7 +1101,7 @@ server <- function(input, output, session) {
       radioButtons(
         "paramMode", "Enter parameters via:",
         choices = c("Manual entry" = "manual", "Upload CSV" = "csv"),
-        selected = (input$paramMode %||% "manual"),
+        selected = "manual",
         inline = TRUE
       ),
       uiOutput("paramModeUI"),
@@ -1131,7 +1126,6 @@ server <- function(input, output, session) {
       scale_params_applied(FALSE)
       # optional but good: clear any previous df so you can't accidentally generate using stale params
       scale_params_csv(NULL)
-      scale_params_preview(NULL)
 
       k <- ncol(M())
 
@@ -1190,23 +1184,6 @@ server <- function(input, output, session) {
       df2$nItems <- nItems_i
       scale_params_csv(df2)
 
-      # Build preview table with simple notes about coercion
-      notes <- vapply(seq_len(k), function(i) {
-        msg <- character(0)
-        if (!isTRUE(all.equal(df$lower[i], lower_i[i]))) msg <- c(msg, "lower floored")
-        if (!isTRUE(all.equal(df$upper[i], upper_i[i]))) msg <- c(msg, "upper floored")
-        if (!isTRUE(all.equal(df$nItems[i], nItems_i[i]))) msg <- c(msg, "nItems floored")
-        if (length(msg) == 0) "" else paste(msg, collapse = "; ")
-      }, character(1))
-      df_preview <- df2
-      df_preview$Notes <- notes
-      scale_params_preview(df_preview)
-
-      scale_params_upload_id(scale_params_upload_id() + 1L)
-
-      # Auto-open the preview accordion after a successful upload
-      bslib::accordion_panel_open("dataGenDock", "params_preview")
-
       # Apply to inputs (optional, but nice)
       for (i in seq_len(k)) {
         updateTextInput(session, paste0("scaleName", i),
@@ -1230,13 +1207,6 @@ server <- function(input, output, session) {
     },
     ignoreInit = TRUE
   )
-
-  # Track when user generates data so we can hide the preview only *after* generation
-  observeEvent(input$generate, {
-    scale_params_generate_id(scale_params_generate_id() + 1L)
-    # Hide preview after a successful generation click
-    bslib::accordion_panel_close("dataGenDock", "params_preview")
-  }, ignoreInit = TRUE)
 
   observeEvent(input$symFix,
     {
@@ -1535,7 +1505,6 @@ server <- function(input, output, session) {
   observeEvent(M(),
     {
       scale_params_csv(NULL)
-      scale_params_preview(NULL)
       scale_params_applied(FALSE)
       scale_params_status(NULL)
     },
@@ -1827,13 +1796,153 @@ server <- function(input, output, session) {
       )
     )
   })
-
-
-  # ---- plot cache (data validation) ----
+  # ---- plot + stats cache (data validation) ----
   plotStorage <- reactiveVal(NULL)
+  plot_key <- reactiveVal(NULL)
+
+
+
+  plotPngPath <- reactiveVal(NULL)
+  plotPngKey  <- reactiveVal(NULL)
+  plotPngWH   <- reactiveVal(NULL) # c(width, height, res)
+  stats_cache <- reactiveVal(NULL)
+  stats_key <- reactiveVal(NULL)
+
+  # We only build the heavy GGally plot when the user actually visits the Validation tab
+  validation_seen <- reactiveVal(FALSE)
+
+  # Prevent duplicate builds if user clicks around while a plot is still being generated
+  plot_building <- reactiveVal(FALSE)
+
+  observeEvent(input$main_nav,
+    {
+      if (identical(input$main_nav, "validate")) validation_seen(TRUE)
+    },
+    ignoreInit = TRUE
+  )
+
+  # Cheap fingerprint for when the generated dataset changes
+  data_key <- reactive({
+    df <- syntheticData()
+    req(is.data.frame(df), nrow(df) > 0, ncol(df) > 0)
+    paste0(nrow(df), "x", ncol(df), "|", paste(names(df), collapse = ","))
+  })
+
+
+  # If syntheticData changes for any reason other than the Generate button (e.g., uploads / restores),
+  # make sure cached validation artefacts are cleared.
+  observeEvent(syntheticData(), {
+    key_now <- tryCatch(data_key(), error = function(e) NULL)
+    if (is.null(key_now)) return(invisible())
+
+    if (!is.null(plot_key()) && !identical(plot_key(), key_now)) {
+      plotStorage(NULL); plot_key(NULL)
+    }
+    if (!is.null(plotPngKey()) && !identical(plotPngKey(), key_now)) {
+      plotPngPath(NULL); plotPngKey(NULL); plotPngWH(NULL)
+    }
+  }, ignoreInit = TRUE)
+
+
+  # When the user generates data: compute fast summaries immediately; invalidate plot cache
+  observeEvent(input$generate,
+    {
+      df <- syntheticData()
+      req(is.data.frame(df), nrow(df) > 0, ncol(df) > 0)
+
+      key <- paste0(nrow(df), "x", ncol(df), "|", paste(names(df), collapse = ","))
+
+      # Use numeric columns only (protect against factor/character columns)
+      num_cols <- vapply(df, is.numeric, logical(1))
+      dfn <- if (any(num_cols)) df[, num_cols, drop = FALSE] else NULL
+
+      if (is.null(dfn) || ncol(dfn) == 0) {
+        stats_cache(list(
+          n = nrow(df),
+          p = ncol(df),
+          means = NULL,
+          sds = NULL,
+          mins = NULL,
+          maxs = NULL,
+          eigen_vals = NULL,
+          alpha = NA_real_,
+          note = "No numeric columns available for summary statistics."
+        ))
+        stats_key(key)
+
+        plotStorage(NULL)
+        plot_key(NULL)
+
+        plotPngPath(NULL)
+        plotPngKey(NULL)
+        plotPngWH(NULL)
+
+        return(invisible())
+      }
+
+      # ---- fast stats first (always) ----
+      means <- round(colMeans(dfn, na.rm = TRUE), 3)
+      sds <- round(vapply(dfn, sd, numeric(1), na.rm = TRUE), 3)
+      mins <- round(vapply(dfn, min, numeric(1), na.rm = TRUE), 3)
+      maxs <- round(vapply(dfn, max, numeric(1), na.rm = TRUE), 3)
+
+      # Set cache immediately so summaries can render even if later steps fail
+      stats_cache(list(
+        n = nrow(dfn),
+        p = ncol(dfn),
+        means = means,
+        sds = sds,
+        mins = mins,
+        maxs = maxs,
+        eigen_vals = NULL,
+        alpha = NA_real_,
+        note = NULL
+      ))
+      stats_key(key)
+
+      # ---- optional extras (guarded) ----
+      alpha_val <- tryCatch(
+        {
+          LikertMakeR::alpha(NULL, dfn)
+        },
+        error = function(e) NA_real_
+      )
+
+      eig_vals <- NULL
+      if (ncol(dfn) >= 2 && ncol(dfn) <= 60) {
+        cor_dat <- tryCatch(cor(dfn, use = "pairwise.complete.obs") |> as.matrix(), error = function(e) NULL)
+        eig_vals <- if (is.null(cor_dat)) NULL else tryCatch(eigen(cor_dat, only.values = TRUE)$values, error = function(e) NULL)
+        eig_vals <- if (is.null(eig_vals)) NULL else round(eig_vals, 2)
+      }
+
+      # Update cache with extras
+      stats_cache(list(
+        n = nrow(dfn),
+        p = ncol(dfn),
+        means = means,
+        sds = sds,
+        mins = mins,
+        maxs = maxs,
+        eigen_vals = eig_vals,
+        alpha = alpha_val,
+        note = NULL
+      ))
+      stats_key(key)
+
+      # ---- invalidate plot cache (data changed) ----
+      plotStorage(NULL)
+      plot_key(NULL)
+
+      plotPngPath(NULL)
+      plotPngKey(NULL)
+      plotPngWH(NULL)
+    },
+    ignoreInit = TRUE
+  )
 
 
   # Keep your dynamicInputs in sync with uploaded dimension
+
   observeEvent(M_upload_ok(),
     {
       req(input$matrixSource == "upload")
@@ -2205,26 +2314,6 @@ server <- function(input, output, session) {
   })
 
 
-  output$scaleParamsPreviewUI <- renderUI({
-    # Show preview when:
-    # - user is in CSV mode
-    # - we have a parsed preview
-    # - the most recent *successful upload* is newer than the most recent *generate* click
-    req(input$paramMode)
-    if (!identical(input$paramMode, "csv")) return(NULL)
-    if (is.null(scale_params_preview())) return(NULL)
-
-    if (scale_params_upload_id() <= scale_params_generate_id()) return(NULL)
-
-    DT::DTOutput("scaleParamsPreview")
-  })
-
-  output$scaleParamsPreview <- DT::renderDT({
-    req(scale_params_preview())
-    DT::datatable(scale_params_preview(), options = list(pageLength = 10, dom = "tip"), rownames = FALSE)
-  })
-
-
   output$syntheticData <- renderDT({
     if (!is.null(data_error())) {
       return(DT::datatable(data.frame(Error = data_error())))
@@ -2242,12 +2331,14 @@ server <- function(input, output, session) {
 
 
   # Calculate and display the eigenvalues of generated dataframe
-  output$eigenSummary <- renderText({
-    req(plot_df())
-    cor_dat <- cor(plot_df(), use = "pairwise.complete.obs") |> as.matrix()
-
-    eigen_vals <- eigen(cor_dat)$values |> round(2)
-    paste(eigen_vals, collapse = ", ")
+  output$eigenSummary <- renderPrint({
+    s <- stats_cache()
+    req(!is.null(s))
+    if (is.null(s$eigen_vals)) {
+      cat("—")
+    } else {
+      cat(paste(s$eigen_vals, collapse = ", "))
+    }
   })
 
 
@@ -2328,66 +2419,132 @@ server <- function(input, output, session) {
   }
 
   # Calculate and display means and standard deviations
-  output$dataSummary <- renderPrint({
-    req(plot_df())
-    x <- plot_df()
+  output$dataSummary <- renderTable(
+    {
+      s <- stats_cache()
+      req(!is.null(s))
+      if (!is.null(s$note)) {
+        return(data.frame(Message = s$note, check.names = FALSE))
+      }
+      if (is.null(s$means) || is.null(s$sds)) {
+        return(data.frame(Message = "No summary statistics available.", check.names = FALSE))
+      }
 
-    myMoments <- rbind(
-      mean = round(colMeans(x, na.rm = TRUE), 3),
-      sd   = round(apply(x, 2, sd, na.rm = TRUE), 3)
-    )
-
-    # tighter printing so it doesn't wrap as aggressively
-    print(myMoments, digits = 3, width = 200)
-  })
+      tab <- rbind(
+        Mean = s$means,
+        SD   = s$sds,
+        Min  = s$mins,
+        Max  = s$maxs
+      )
+      as.data.frame(tab, check.names = FALSE)
+    },
+    rownames = TRUE
+  )
 
 
   # Calculate and display Cronbach's Alpha
   output$cronbachAlphaOutput <- renderText({
-    req(plot_df())
-    sprintf("%.3f", LikertMakeR::alpha(NULL, plot_df()))
+    s <- stats_cache()
+    req(!is.null(s))
+    if (is.na(s$alpha)) {
+      return("—")
+    }
+    sprintf("%.3f", s$alpha)
   })
 
-  # Precompute the plot as soon as new data exist (so it's ready by the time
-  # the user clicks the Data validation tab).
-  observeEvent(syntheticData(),
-    {
-      plotStorage(NULL)
-      withProgress(message = "Preparing validation plot...", value = 0, {
-        p <- generatePairsPlot(plot_df())
-        plotStorage(p)
-      })
-    },
-    ignoreInit = TRUE
-  )
+
+  # Ensure key validation summaries compute even when the tab is hidden
+  outputOptions(output, "dataSummary", suspendWhenHidden = FALSE)
+  outputOptions(output, "cronbachAlphaOutput", suspendWhenHidden = FALSE)
+  outputOptions(output, "eigenSummary", suspendWhenHidden = FALSE)
+
+  # Render plot on-demand (only after user visits Validation), and cache it until data change
 
 
-  # Render cached plot (and fall back to on-demand if needed)
   output$dataVis <- renderPlot({
     req(syntheticData())
 
-    if (is.null(plotStorage())) {
-      p <- generatePairsPlot(plot_df())
-      plotStorage(p)
+    # Only build the heavy plot when the user is actually on the Validation tab
+    if (!isTRUE(validation_seen())) {
+      plot.new()
+      title(main = "Visual summary not built yet", cex.main = 1.1)
+      text(0.5, 0.55, "Open the Data validation tab to build the pairs plot", cex = 1.0)
+      text(0.5, 0.45, "Summary statistics are shown below the plot.", cex = 0.9)
+      return(invisible())
     }
-    print(plotStorage())
+
+    # If a build is already in progress, show a friendly placeholder
+    if (isTRUE(plot_building())) {
+      plot.new()
+      title(main = "Building visual summary…", cex.main = 1.1)
+      text(0.5, 0.5, "Please wait — this can take a moment for large matrices.", cex = 0.95)
+      return(invisible())
+    }
+
+    # Key for the *current* dataset
+    key <- tryCatch(data_key(), error = function(e) NULL)
+    req(!is.null(key))
+    
+
+    # If we already have a plot for this dataset, just redraw it (no recompute)
+    if (!is.null(plotStorage()) && identical(plot_key(), key)) {
+      print(plotStorage())
+      return(invisible())
+    }
+
+    # Otherwise build it now
+    withProgress(message = "Preparing visual summary (pairs plot)...", value = 0, {
+      plot_building(TRUE)
+      on.exit(plot_building(FALSE), add = TRUE)
+
+      p <- generatePairsPlot(syntheticData())
+      plotStorage(p)
+      plot_key(key)
+      print(p)
+    })
   })
-
-
+  
+  
   output$downloadPlot <- downloadHandler(
     filename = function() {
-      paste("LikertMakeR_corr_", Sys.Date(), ".png", sep = "")
+      paste("LikertMakeR_pairs_", Sys.Date(), ".png", sep = "")
     },
     content = function(file) {
-      req(plotStorage()) # make sure plot is available
+      req(plotStorage())
+      key <- plot_key()
+      req(!is.null(key))
+      # Target image size proportional to number of scales (keeps text sizing consistent)
+      k <- k_scales()
+      w <- max(800, k * 200)
+      h <- max(800, k * 200)
+      res <- 144
 
-      ragg::agg_png(file,
-        width = k_scales() * 200,
-        height = k_scales() * 200,
-        res = 144
-      )
+
+      # If we already have a PNG for this dataset (and at the current requested size), copy it instantly
+      want_wh <- c(as.integer(w), as.integer(h), as.integer(res))
+      have_wh <- plotPngWH()
+      ok_size <- !is.null(have_wh) && identical(as.integer(have_wh), want_wh)
+
+      if (!is.null(plotPngPath()) &&
+        identical(plotPngKey(), key) &&
+        file.exists(plotPngPath()) &&
+        ok_size) {
+        file.copy(plotPngPath(), file, overwrite = TRUE)
+        return(invisible())
+      }
+
+      # Fallback: build PNG once (still no recompute of ggpairs)
+
+      ragg::agg_png(file, width = w, height = h, res = res, scaling = 1, background = "white")
+      on.exit(dev.off(), add = TRUE)
       print(plotStorage())
-      dev.off()
+
+      # Also cache it for next time
+      tmp_png <- tempfile(fileext = ".png")
+      file.copy(file, tmp_png, overwrite = TRUE)
+      plotPngPath(tmp_png)
+      plotPngKey(key)
+      plotPngWH(c(w, h, res))
     }
   )
 
