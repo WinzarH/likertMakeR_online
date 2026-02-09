@@ -4,6 +4,7 @@
 ###
 
 library(shiny) # what this is
+library(htmltools) # render tags
 library(bslib) # easier cards panels and other layout
 library(bsicons) # even more icons to not use
 library(shinycssloaders) # interactive and pretty
