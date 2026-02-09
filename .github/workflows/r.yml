@@ -52,4 +52,4 @@ jobs:
       - name: Smoke test
         run: |
           Rscript -e "library(shiny)"
-          Rscript -e "source('app.R'); cat('app.R sourced OK\n')"
+          Rscript -e "source('global.R'); source('ui.R'); source('server.R'); cat('App components loaded OK\n')"
