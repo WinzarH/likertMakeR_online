@@ -2,6 +2,7 @@
 ##### LikertMakeR_online
 ###
 ##### Hume Winzar
+##### February 2026
 ###
 
 
@@ -69,7 +70,7 @@ server <- function(input, output, session) {
       any(is.finite(y)) && all(is.finite(y) | is.na(y))
     }
 
-    # --- Fallback for: left-hand labels only, but no header row -----------------
+    # --- Fallback for: left-hand labels only, but no header row 
     # Example: first column is labels, remaining columns are numeric,
     # and the first data row got swallowed as the header (k-1 x (k+1)).
 
@@ -106,7 +107,7 @@ server <- function(input, output, session) {
     }
 
 
-    # --- Fallback for headerless numeric matrices -------------------------------
+    # --- Fallback for headerless numeric matrices 
     # If the file has NO header row, read.csv(header=TRUE) will eat the first row,
     # giving (k-1) x k. Detect that pattern and re-read with header=FALSE.
 
@@ -195,7 +196,6 @@ server <- function(input, output, session) {
     }
 
     # Corr sanity
-
     sym_err <- max(abs(m - t(m)))
 
     list(
@@ -221,7 +221,8 @@ server <- function(input, output, session) {
   # Upload messaging
   upload_error <- reactiveVal(NULL)
   upload_status <- reactiveVal(NULL)
-  upload_diag <- reactiveVal(NULL) # stores from validate_matrix_upload()$details
+  # stores from validate_matrix_upload()$details
+  upload_diag <- reactiveVal(NULL) 
 
 
   default_scale_names <- reactive({
@@ -1253,7 +1254,8 @@ server <- function(input, output, session) {
       )
     )
   })
-  # ---- plot + stats cache (data validation) ----
+
+    # ---- plot + stats cache (data validation) ----
   plotStorage <- reactiveVal(NULL)
   plot_key <- reactiveVal(NULL)
 

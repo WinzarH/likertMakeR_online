@@ -5,9 +5,9 @@
 ##### February 2026
 ###
 
+#  https://winzarh-likertmaker-online.share.connect.posit.cloud/
+#  https://winzar.shinyapps.io/likertMakeR_online/
 
-
-# ---- https://winzar.shinyapps.io/likertMakeR_online/  ----
 
 # "cerulean"  "cosmo"
 # "journal"   "litera"    "materia"
