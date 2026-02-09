@@ -1,4 +1,4 @@
-# <img alt = "LikertMakeR logo" src="www/LikertMakeR_4.png" width = 10% LikertMakeR_online   LikertMakeR Online
+# <img alt = "LikertMakeR logo" src="www/LikertMakeR_4.png" width = 10%>  LikertMakeR Online
 
 An interactive Shiny application for generating synthetic Likert scale data 
 with specified correlations, means, and standard deviations.
