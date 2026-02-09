@@ -1,6 +1,5 @@
-
 ###
-##### globals
+##### LikertMakeR_online globals
 ###
 
 library(shiny) # what this is
